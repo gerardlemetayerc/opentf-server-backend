@@ -48,7 +48,9 @@ func RegisterRoutes(r *gin.Engine) {
 	// User management endpoints
 	r.GET("/api/users", GetUsers)
 	r.POST("/api/users", CreateUser)
-	r.POST("/api/users/login", LoginUser)
+	r.POST("/api/users/login", LoginUser)            // locale
+	r.POST("/api/users/login_oidc", LoginOIDCUser)   // OIDC
+	r.POST("/api/users/login_token", LoginTokenUser) // token API
 	r.GET("/modules", ListModules)
 	r.POST("/modules", CreateModule)
 	r.GET("/modules/:module_id/properties", ListProperties)

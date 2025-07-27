@@ -2,10 +2,12 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"opentf-server/internal/db"
 	"opentf-server/internal/models"
+	"os"
 	"time"
 )
 
@@ -181,5 +183,24 @@ func LoginUser(c *gin.Context) {
 	now := time.Now()
 	db.Model(&user).Update("last_login", &now)
 	user.PasswordHash = ""
-	c.JSON(http.StatusOK, user)
+
+	// Génération d'un JWT
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "dev-secret" // à remplacer en prod
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"email":   user.Email,
+		"user_id": user.ID,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+	})
+	tokenString, err := token.SignedString([]byte(jwtSecret))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token generation failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"token": tokenString,
+		"user":  user,
+	})
 }
