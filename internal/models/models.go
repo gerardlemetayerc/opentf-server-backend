@@ -15,16 +15,6 @@ type Module struct {
 	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
-type Instance struct {
-	ID        uint      `gorm:"primary_key" json:"id"`
-	ModuleID  uint      `json:"module_id"`
-	Variables string    `json:"variables"` // JSON string of variables
-	Status    string    `json:"status"`    // pending, running, success, error
-	Output    string    `json:"output"`    // JSON string of outputs
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 type Job struct {
 	ID         uint      `gorm:"primary_key" json:"id"`
 	InstanceID uint      `json:"instance_id"`

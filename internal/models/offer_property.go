@@ -14,4 +14,5 @@ type OfferProperty struct {
 	MetadataSource string `json:"metadata_source"`
 	DependsOn      string `json:"depends_on"`
 	CustomJS       string `json:"customjs"`
+	// IsNameProperty supprimé, la configuration se fait au niveau de l'offre
 }
