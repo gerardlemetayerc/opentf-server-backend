@@ -91,6 +91,8 @@ func CreateOffer(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	// Par défaut, une offre est auto-validée
+	input.AutoValidated = true
 	if err := db.Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -118,6 +120,8 @@ func UpdateOffer(c *gin.Context) {
 	offer.GitURL = input.GitURL
 	offer.Active = input.Active
 	offer.CategoryID = input.CategoryID
+	offer.AutoValidated = input.AutoValidated
+	offer.ValidationGroupID = input.ValidationGroupID
 	if err := db.Save(&offer).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

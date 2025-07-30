@@ -13,14 +13,3 @@ func ListInstances(c *gin.Context) {
 	db.Find(&instances)
 	c.JSON(http.StatusOK, instances)
 }
-
-func CreateInstance(c *gin.Context) {
-	db := db.GetDB()
-	var instance models.Instance
-	if err := c.ShouldBindJSON(&instance); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	db.Create(&instance)
-	c.JSON(http.StatusCreated, instance)
-}

@@ -6,73 +6,86 @@ import (
 )
 
 func RegisterRoutes(r *gin.Engine) {
+
 	// OfferProperty endpoints
 	r.GET("/api/offers/:offer_id/properties", GetOfferProperties)
 	r.POST("/api/offers/:offer_id/properties", CreateOfferProperty)
 	r.GET("/api/offers/:offer_id/properties/:id", GetOfferProperty)
 	r.PUT("/api/offers/:offer_id/properties/:id", UpdateOfferProperty)
 	r.DELETE("/api/offers/:offer_id/properties/:id", DeleteOfferProperty)
+
 	// OfferCategory endpoints
-	r.GET("/api/offer_categories", GetOfferCategories)
-	r.POST("/api/offer_categories", CreateOfferCategory)
-	r.PUT("/api/offer_categories/:id", UpdateOfferCategory)
-	r.DELETE("/api/offer_categories/:id", DeleteOfferCategory)
+	r.GET("/api/offer_categories", JWTAuthMiddleware(), GetOfferCategories)
+	r.POST("/api/offer_categories", JWTAuthMiddleware(), CreateOfferCategory)
+	r.PUT("/api/offer_categories/:id", JWTAuthMiddleware(), UpdateOfferCategory)
+	r.DELETE("/api/offer_categories/:id", JWTAuthMiddleware(), DeleteOfferCategory)
 
 	// Offer endpoints
-	r.GET("/api/offers", GetOffers)
-	r.POST("/api/offers", CreateOffer)
-	r.GET("/api/offers/:offer_id", GetOffer)
-	r.PUT("/api/offers/:offer_id", UpdateOffer)
-	r.DELETE("/api/offers/:offer_id", DeleteOffer)
+	r.GET("/api/offers", JWTAuthMiddleware(), GetOffers)
+	r.POST("/api/offers", JWTAuthMiddleware(), CreateOffer)
+	r.GET("/api/offers/:offer_id", JWTAuthMiddleware(), GetOffer)
+	r.PUT("/api/offers/:offer_id", JWTAuthMiddleware(), UpdateOffer)
+	r.DELETE("/api/offers/:offer_id", JWTAuthMiddleware(), DeleteOffer)
+
 	// SuggestedValue endpoints imbriquées par domaine
-	r.GET("/api/domains/:domain_id/suggested_values", GetSuggestedValuesByDomain)
-	r.POST("/api/domains/:domain_id/suggested_values", CreateSuggestedValueByDomain)
-	r.PUT("/api/domains/:domain_id/suggested_values/:id", UpdateSuggestedValueByDomain)
-	r.DELETE("/api/domains/:domain_id/suggested_values/:id", DeleteSuggestedValueByDomain)
+	r.GET("/api/domains/:domain_id/suggested_values", JWTAuthMiddleware(), GetSuggestedValuesByDomain)
+	r.POST("/api/domains/:domain_id/suggested_values", JWTAuthMiddleware(), CreateSuggestedValueByDomain)
+	r.PUT("/api/domains/:domain_id/suggested_values/:id", JWTAuthMiddleware(), UpdateSuggestedValueByDomain)
+	r.DELETE("/api/domains/:domain_id/suggested_values/:id", JWTAuthMiddleware(), DeleteSuggestedValueByDomain)
 	// Domain endpoints
-	r.GET("/api/domains", GetDomains)
-	r.POST("/api/domains", CreateDomain)
-	r.GET("/api/domains/:domain_id", GetDomain)
-	r.PUT("/api/domains/:domain_id", UpdateDomain)
-	r.DELETE("/api/domains/:domain_id", DeleteDomain)
+	r.GET("/api/domains", JWTAuthMiddleware(), GetDomains)
+	r.POST("/api/domains", JWTAuthMiddleware(), CreateDomain)
+	r.GET("/api/domains/:domain_id", JWTAuthMiddleware(), GetDomain)
+	r.PUT("/api/domains/:domain_id", JWTAuthMiddleware(), UpdateDomain)
+	r.DELETE("/api/domains/:domain_id", JWTAuthMiddleware(), DeleteDomain)
 
 	// SuggestedValue endpoints
-	r.GET("/api/suggested_values", GetSuggestedValues)
-	r.POST("/api/suggested_values", CreateSuggestedValue)
-	r.GET("/api/suggested_values/:id", GetSuggestedValue)
-	r.PUT("/api/suggested_values/:id", UpdateSuggestedValue)
-	r.DELETE("/api/suggested_values/:id", DeleteSuggestedValue)
-	r.GET("/api/users/:id", GetUser)
-	r.PUT("/api/users/:id", UpdateUser)
-	r.DELETE("/api/users/:id", DeleteUser)
-	// User management endpoints
-	r.GET("/api/users", GetUsers)
-	r.POST("/api/users", CreateUser)
+	r.GET("/api/suggested_values", JWTAuthMiddleware(), GetSuggestedValues)
+	r.POST("/api/suggested_values", JWTAuthMiddleware(), CreateSuggestedValue)
+	r.GET("/api/suggested_values/:id", JWTAuthMiddleware(), GetSuggestedValue)
+	r.PUT("/api/suggested_values/:id", JWTAuthMiddleware(), UpdateSuggestedValue)
+	r.DELETE("/api/suggested_values/:id", JWTAuthMiddleware(), DeleteSuggestedValue)
+
+	// User endpoints
+	r.GET("/api/users/me", JWTAuthMiddleware(), GetCurrentUser)
+	r.GET("/api/users/:id", JWTAuthMiddleware(), GetUser)
+	r.PUT("/api/users/:id", JWTAuthMiddleware(), UpdateUser)
+	r.DELETE("/api/users/:id", JWTAuthMiddleware(), DeleteUser)
+	r.GET("/api/users", JWTAuthMiddleware(), GetUsers)
+	r.POST("/api/users", JWTAuthMiddleware(), CreateUser)
+
+	// Authentication endpoints
 	r.POST("/api/users/login", LoginUser)            // locale
 	r.POST("/api/users/login_oidc", LoginOIDCUser)   // OIDC
 	r.POST("/api/users/login_token", LoginTokenUser) // token API
-	r.GET("/modules", ListModules)
-	r.POST("/modules", CreateModule)
-	r.GET("/modules/:module_id/properties", ListProperties)
-	r.POST("/modules/:module_id/properties", CreateProperty)
-	r.GET("/modules/:module_id/properties/:property_id", GetProperty)
-	r.PUT("/modules/:module_id/properties/:property_id", UpdateProperty)
-	r.DELETE("/modules/:module_id/properties/:property_id", DeleteProperty)
-	r.GET("/instances", ListInstances)
-	r.POST("/instances", CreateInstance)
-	r.GET("/jobs", ListJobs)
-	r.POST("/jobs", CreateJob)
+
+	// Module endpoints
+	r.GET("/modules", JWTAuthMiddleware(), ListModules)
+	r.POST("/modules", JWTAuthMiddleware(), CreateModule)
+	r.GET("/modules/:module_id/properties", JWTAuthMiddleware(), ListProperties)
+	r.POST("/modules/:module_id/properties", JWTAuthMiddleware(), CreateProperty)
+	r.GET("/modules/:module_id/properties/:property_id", JWTAuthMiddleware(), GetProperty)
+	r.PUT("/modules/:module_id/properties/:property_id", JWTAuthMiddleware(), UpdateProperty)
+	r.DELETE("/modules/:module_id/properties/:property_id", JWTAuthMiddleware(), DeleteProperty)
+	r.GET("/api/instances", JWTAuthMiddleware(), GetInstances)
+	r.POST("/api/instances", JWTAuthMiddleware(), CreateInstance)
+	r.GET("/api/instances/:id", JWTAuthMiddleware(), GetInstance)
+	r.PUT("/api/instances/:id", JWTAuthMiddleware(), UpdateInstance)
+	r.DELETE("/api/instances/:id", JWTAuthMiddleware(), DeleteInstance)
+	r.GET("/jobs", JWTAuthMiddleware(), ListJobs)
+	r.POST("/jobs", JWTAuthMiddleware(), CreateJob)
 
 	// IAM OIDC config endpoints
-	r.GET("/api/iam/auth/oidc", iam.GetOIDCConfig)
-	r.POST("/api/iam/auth/oidc", iam.SetOIDCConfig)
+	r.GET("/api/iam/auth/oidc", JWTAuthMiddleware(), iam.GetOIDCConfig)
+	r.POST("/api/iam/auth/oidc", JWTAuthMiddleware(), iam.SetOIDCConfig)
 
 	// IAM Auth methods endpoints
 	r.GET("/api/iam/auth_methods", iam.GetAuthMethods)
-	r.POST("/api/iam/auth_methods", iam.SetAuthMethod)
+	r.POST("/api/iam/auth_methods", JWTAuthMiddleware(), iam.SetAuthMethod)
+
 	// Group management endpoints
-	r.GET("/api/groups", GetGroups)
-	r.POST("/api/groups", CreateGroup)
-	r.PUT("/api/groups/:id", UpdateGroup)
-	r.DELETE("/api/groups/:id", DeleteGroup)
+	r.GET("/api/groups", JWTAuthMiddleware(), GetGroups)
+	r.POST("/api/groups", JWTAuthMiddleware(), CreateGroup)
+	r.PUT("/api/groups/:id", JWTAuthMiddleware(), UpdateGroup)
+	r.DELETE("/api/groups/:id", JWTAuthMiddleware(), DeleteGroup)
 }

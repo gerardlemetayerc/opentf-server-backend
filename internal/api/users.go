@@ -204,3 +204,30 @@ func LoginUser(c *gin.Context) {
 		"user":  user,
 	})
 }
+
+// GET /api/users/me
+func GetCurrentUser(c *gin.Context) {
+	db := db.GetDB()
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No user_id in token"})
+		return
+	}
+	userID, ok := userIDRaw.(float64)
+	if !ok {
+		// Peut être uint selon le middleware
+		if idUint, ok2 := userIDRaw.(uint); ok2 {
+			userID = float64(idUint)
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user_id type"})
+			return
+		}
+	}
+	var user models.User
+	if err := db.Preload("Groups").First(&user, uint(userID)).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	user.PasswordHash = ""
+	c.JSON(http.StatusOK, user)
+}

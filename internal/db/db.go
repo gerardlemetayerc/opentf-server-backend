@@ -26,6 +26,7 @@ func GetDB() *gorm.DB {
 		db.AutoMigrate(&models.Domain{}, &models.SuggestedValue{})
 		db.AutoMigrate(&models.OfferCategory{}, &models.Offer{})
 		db.AutoMigrate(&models.OfferProperty{})
+		db.AutoMigrate(&models.Instance{}, &models.InstanceProperty{})
 
 		// Seed catégories d'offre par défaut
 		var countCat int
