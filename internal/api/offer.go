@@ -1,10 +1,17 @@
 package api
 
 import (
+	"archive/zip"
 	"github.com/gin-gonic/gin"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"opentf-server/internal/db"
 	"opentf-server/internal/models"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 // --- OfferCategory CRUD ---
@@ -93,12 +100,85 @@ func CreateOffer(c *gin.Context) {
 	}
 	// Par défaut, une offre est auto-validée
 	input.AutoValidated = true
+
+	// Si un GitURL de module est précisé, on clone et stocke le contenu
+	if input.GitURL != "" {
+		tmpDir, err := ioutil.TempDir("", "moduleclone")
+		if err == nil {
+			cmd := exec.Command("git", "clone", input.GitURL, tmpDir)
+			if err := cmd.Run(); err == nil {
+				archivePath := filepath.Join(tmpDir, "module.zip")
+				err := zipFolder(tmpDir, archivePath)
+				if err == nil {
+					archiveData, err := ioutil.ReadFile(archivePath)
+					if err == nil {
+						module := models.Module{
+							Name:        input.Name,
+							Description: "Module importé automatiquement",
+							GitURL:      input.GitURL,
+							Version:     input.Version,
+							Active:      true,
+							Data:        archiveData,
+						}
+						db.Create(&module)
+						input.ModuleID = &module.ID
+					}
+				}
+			}
+			os.RemoveAll(tmpDir)
+		}
+	}
+
 	if err := db.Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	db.Preload("Category").First(&input, input.ID)
 	c.JSON(http.StatusOK, input)
+}
+
+// zipFolder zips the contents of srcDir into destZip
+func zipFolder(srcDir, destZip string) error {
+	zipFile, err := os.Create(destZip)
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+	zipWriter := zip.NewWriter(zipFile)
+	defer zipWriter.Close()
+
+	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// Ignore the zip file itself
+		if path == destZip {
+			return nil
+		}
+		relPath := strings.TrimPrefix(path, srcDir)
+		relPath = strings.TrimLeft(relPath, string(filepath.Separator))
+		if info.IsDir() {
+			return nil
+		}
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		fHeader, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+		fHeader.Name = relPath
+		fHeader.Method = zip.Deflate
+		writer, err := zipWriter.CreateHeader(fHeader)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(writer, file)
+		return err
+	})
+	return err
 }
 
 func UpdateOffer(c *gin.Context) {
@@ -122,6 +202,7 @@ func UpdateOffer(c *gin.Context) {
 	offer.CategoryID = input.CategoryID
 	offer.AutoValidated = input.AutoValidated
 	offer.ValidationGroupID = input.ValidationGroupID
+	offer.NamePropertyID = input.NamePropertyID
 	if err := db.Save(&offer).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

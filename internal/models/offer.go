@@ -17,4 +17,5 @@ type Offer struct {
 	AutoValidated     bool          `json:"auto_validated"`
 	ValidationGroupID *uint         `json:"validation_group_id"`
 	NamePropertyID    *uint         `json:"name_property_id"`
+	ModuleID          *uint         `json:"module_id"` // lien vers le module
 }

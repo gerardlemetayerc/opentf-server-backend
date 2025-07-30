@@ -8,8 +8,13 @@ type Module struct {
 	ID          uint       `gorm:"primary_key" json:"id"`
 	Name        string     `json:"name"`
 	Description string     `json:"description"`
-	Source      string     `json:"source"`         // URL or path to the module
-	Cost        *float64   `json:"cost,omitempty"` // optional cost
+	GitURL      string     `json:"git_url"`
+	Version     string     `json:"version"`
+	Active      bool       `json:"active"`
+	Data        []byte     `json:"-" gorm:"type:blob"` // archive zip
+	GitSecret   string     `json:"-" gorm:"type:text"` // secret git, jamais exposé en JSON
+	Source      string     `json:"source"`             // URL or path to the module
+	Cost        *float64   `json:"cost,omitempty"`     // optional cost
 	Properties  []Property `gorm:"foreignkey:ModuleID" json:"properties"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`

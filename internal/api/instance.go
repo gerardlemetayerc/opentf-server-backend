@@ -24,8 +24,11 @@ func GetInstances(c *gin.Context) {
 		// Récupère l'offre
 		var offer models.Offer
 		db.First(&offer, inst.OfferID)
-		// Génère un identifiant arbitraire pour le nom de l'instance
-		instanceName := "instance-" + fmt.Sprint(inst.ID)
+		// Utilise le champ Name si valorisé, sinon génère un identifiant arbitraire
+		instanceName := inst.Name
+		if instanceName == "" {
+			instanceName = "instance-" + fmt.Sprint(inst.ID)
+		}
 		result = append(result, map[string]interface{}{
 			"id":                    inst.ID,
 			"offer_id":              inst.OfferID,
@@ -120,11 +123,24 @@ func CreateInstance(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Utilisateur non authentifié"})
 		return
 	}
+	// Récupère l'offre pour NamePropertyID
+	var offer models.Offer
+	if err := db.First(&offer, input.OfferID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Offer not found"})
+		return
+	}
+	var nameValue string
+	for _, prop := range input.Properties {
+		if offer.NamePropertyID != nil && prop.OfferPropertyID == *offer.NamePropertyID {
+			nameValue = prop.Value
+		}
+	}
 	instance := models.Instance{
 		OfferID:     input.OfferID,
 		Status:      "draft",
 		RequesterID: userID.(uint),
 		ValidatorID: input.ValidatorID,
+		Name:        nameValue,
 	}
 	if err := db.Create(&instance).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -173,11 +189,34 @@ func UpdateInstance(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	// Mise à jour des propriétés si envoyées
-	if input.Properties != nil {
-		// Supprime toutes les propriétés existantes
+	// Mise à jour des propriétés et du nom si configuré
+	var offer models.Offer
+	if err := db.First(&offer, instance.OfferID).Error; err == nil {
+		var nameValue string
+		if input.Properties != nil {
+			// Supprime toutes les propriétés existantes
+			db.Where("instance_id = ?", instance.ID).Delete(&models.InstanceProperty{})
+			// Ajoute les nouvelles propriétés
+			for _, prop := range input.Properties {
+				instProp := models.InstanceProperty{
+					InstanceID:      instance.ID,
+					OfferPropertyID: prop.OfferPropertyID,
+					Value:           prop.Value,
+				}
+				db.Create(&instProp)
+				if offer.NamePropertyID != nil && prop.OfferPropertyID == *offer.NamePropertyID {
+					nameValue = prop.Value
+				}
+			}
+			// Met à jour le nom si trouvé
+			if nameValue != "" {
+				instance.Name = nameValue
+				db.Save(&instance)
+			}
+		}
+	} else if input.Properties != nil {
+		// fallback: juste mettre à jour les propriétés
 		db.Where("instance_id = ?", instance.ID).Delete(&models.InstanceProperty{})
-		// Ajoute les nouvelles propriétés
 		for _, prop := range input.Properties {
 			instProp := models.InstanceProperty{
 				InstanceID:      instance.ID,

@@ -88,4 +88,22 @@ func RegisterRoutes(r *gin.Engine) {
 	r.POST("/api/groups", JWTAuthMiddleware(), CreateGroup)
 	r.PUT("/api/groups/:id", JWTAuthMiddleware(), UpdateGroup)
 	r.DELETE("/api/groups/:id", JWTAuthMiddleware(), DeleteGroup)
+
+	r.GET("/api/modules/:id/archive", GetModuleArchive)
+	r.POST("/api/modules/:id/update", UpdateModuleArchive)
+	// ...existing code...
+	r.GET("/api/modules", GetModules)
+	r.POST("/api/modules", CreateModule)
+	r.GET("/api/providers", GetProviders)
+	r.POST("/api/providers", CreateProvider)
+	// ...existing code...
+	backend := r.Group("/backendapi")
+	backend.POST("/statelocks", AcquireStateLock)
+	backend.DELETE("/statelocks/:id", ReleaseStateLock)
+	backend.GET("/statelocks/:instance_id", GetStateLock)
+	// ...existing code...
+	{
+		backend.GET("/statefiles/:id", GetStateFile)
+		backend.POST("/statefiles", CreateOrUpdateStateFile)
+	}
 }
