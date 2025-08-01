@@ -4,12 +4,10 @@ import (
 	"archive/zip"
 	"github.com/gin-gonic/gin"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"opentf-server/internal/db"
 	"opentf-server/internal/models"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -101,34 +99,6 @@ func CreateOffer(c *gin.Context) {
 	// Par défaut, une offre est auto-validée
 	input.AutoValidated = true
 
-	// Si un GitURL de module est précisé, on clone et stocke le contenu
-	if input.GitURL != "" {
-		tmpDir, err := ioutil.TempDir("", "moduleclone")
-		if err == nil {
-			cmd := exec.Command("git", "clone", input.GitURL, tmpDir)
-			if err := cmd.Run(); err == nil {
-				archivePath := filepath.Join(tmpDir, "module.zip")
-				err := zipFolder(tmpDir, archivePath)
-				if err == nil {
-					archiveData, err := ioutil.ReadFile(archivePath)
-					if err == nil {
-						module := models.Module{
-							Name:        input.Name,
-							Description: "Module importé automatiquement",
-							GitURL:      input.GitURL,
-							Version:     input.Version,
-							Active:      true,
-							Data:        archiveData,
-						}
-						db.Create(&module)
-						input.ModuleID = &module.ID
-					}
-				}
-			}
-			os.RemoveAll(tmpDir)
-		}
-	}
-
 	if err := db.Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -197,7 +167,6 @@ func UpdateOffer(c *gin.Context) {
 	offer.Name = input.Name
 	offer.Version = input.Version
 	offer.Icon = input.Icon
-	offer.GitURL = input.GitURL
 	offer.Active = input.Active
 	offer.CategoryID = input.CategoryID
 	offer.AutoValidated = input.AutoValidated

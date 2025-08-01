@@ -11,6 +11,29 @@ import (
 	"path/filepath"
 )
 
+// DELETE /api/modules/:id
+func DeleteModule(c *gin.Context) {
+	db := db.GetDB()
+	var module models.Module
+	id := c.Param("id")
+	if err := db.First(&module, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Module not found"})
+		return
+	}
+	// Vérifie s'il existe une offre liée à ce module
+	var offerCount int
+	db.Model(&models.Offer{}).Where("module_id = ?", module.ID).Count(&offerCount)
+	if offerCount > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "Ce module est encore lié à une ou plusieurs offres actives. Suppression impossible.", "offers_linked": offerCount})
+		return
+	}
+	if err := db.Delete(&module).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"deleted": true})
+}
+
 // POST /api/modules/:id/update
 func UpdateModuleArchive(c *gin.Context) {
 	db := db.GetDB()
@@ -87,6 +110,32 @@ func CreateModule(c *gin.Context) {
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	// Si un GitURL est fourni, clone et zip le repo
+	if input.GitURL != "" {
+		tmpDir, err := ioutil.TempDir("", "moduleclone")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create temp dir"})
+			return
+		}
+		defer os.RemoveAll(tmpDir)
+		cmd := exec.Command("git", "clone", input.GitURL, tmpDir)
+		if err := cmd.Run(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Git clone failed"})
+			return
+		}
+		archivePath := filepath.Join(tmpDir, "module.zip")
+		err = zipFolder(tmpDir, archivePath)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Zip failed"})
+			return
+		}
+		archiveData, err := ioutil.ReadFile(archivePath)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Read zip failed"})
+			return
+		}
+		input.Data = archiveData
 	}
 	if err := db.Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -80,7 +80,6 @@ func GetInstance(c *gin.Context) {
 		"name":                offer.Name,
 		"version":             offer.Version,
 		"icon":                offer.Icon,
-		"git_url":             offer.GitURL,
 		"active":              offer.Active,
 		"category_id":         offer.CategoryID,
 		"auto_validated":      offer.AutoValidated,

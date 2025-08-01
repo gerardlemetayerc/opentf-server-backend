@@ -91,6 +91,7 @@ func RegisterRoutes(r *gin.Engine) {
 
 	r.GET("/api/modules/:id/archive", GetModuleArchive)
 	r.POST("/api/modules/:id/update", UpdateModuleArchive)
+	r.DELETE("/api/modules/:id", DeleteModule)
 	// ...existing code...
 	r.GET("/api/modules", GetModules)
 	r.POST("/api/modules", CreateModule)
