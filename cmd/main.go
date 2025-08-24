@@ -4,6 +4,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"opentf-server/internal/api"
+	"os"
+	"strings"
 )
 
 func main() {
