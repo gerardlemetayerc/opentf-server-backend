@@ -8,8 +8,10 @@ import (
 
 func main() {
 	r := gin.Default()
+	origins := os.Getenv("FRONTEND_ORIGINS")
+	originList := strings.Split(origins, ",")
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowOrigins:     originList,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		AllowCredentials: true,
